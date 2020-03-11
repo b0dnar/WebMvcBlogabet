@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using WebMvcBlogabet.Services;
 
 namespace WebMvcBlogabet
 {
@@ -22,10 +24,11 @@ namespace WebMvcBlogabet
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
+            services.AddTransient<BackgroundService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, BackgroundService backgroundService)
         {
             if (env.IsDevelopment())
             {
@@ -41,10 +44,11 @@ namespace WebMvcBlogabet
 
             app.UseMvc(routes =>
             {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
+                routes.MapRoute(name: "api", template: "api/{controller=Forecast}");
+                routes.MapRoute(name: "default", template: "{controller=Home}/{action=Index}/{id?}");
             });
+
+            Task.Run(async() => { var cts = new CancellationTokenSource();  await backgroundService.StartAsync(cts.Token); }); 
         }
     }
 }
